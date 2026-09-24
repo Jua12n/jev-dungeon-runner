@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jev Dungeon Runner</title>
+  </head>
+  <body>
+    <main class="mx-auto grid h-screen max-h-screen w-full max-w-[1220px] grid-rows-[auto_1fr] gap-3 overflow-hidden p-3">
+      <header class="relative overflow-hidden rounded-2xl border-4 border-cyan-300 bg-slate-950 px-5 py-3 shadow-[8px_8px_0_#7c3aed]">
+        <div class="pointer-events-none absolute right-4 top-12 z-0 hidden grid-cols-4 gap-1 opacity-50 md:grid" aria-hidden="true">
+          <span class="h-4 w-4 bg-cyan-300"></span><span class="h-4 w-4 bg-fuchsia-500"></span><span class="h-4 w-4 bg-yellow-300"></span><span class="h-4 w-4 bg-emerald-400"></span>
+          <span class="h-4 w-4 bg-blue-500"></span><span class="h-4 w-4 bg-red-500"></span><span class="h-4 w-4 bg-orange-400"></span><span class="h-4 w-4 bg-purple-500"></span>
+        </div>
+        <div class="relative z-20 flex items-center justify-between gap-3">
+          <p class="font-mono text-xs font-black uppercase tracking-[0.32em] text-yellow-300" data-i18n-en="Decision-first AI game" data-i18n-es="IA que decide, no conversa">Decision-first AI game</p>
+          <div class="flex rounded-md border-2 border-white bg-slate-950 p-1 font-mono text-[10px] font-black uppercase shadow-[3px_3px_0_#06b6d4]">
+            <button id="lang-en-btn" class="lang-button px-2 py-1">EN</button>
+            <button id="lang-es-btn" class="lang-button px-2 py-1">ES</button>
+          </div>
+        </div>
+        <div class="relative z-10 mt-1 flex items-end justify-between gap-4">
+          <section>
+            <h1 class="font-mono text-4xl font-black uppercase leading-none tracking-tight text-white md:text-5xl">Jev Dungeon Runner</h1>
+            <p class="mt-2 max-w-2xl text-sm font-medium text-cyan-100" data-i18n-en="Tetris-inspired AI chase: Jev tries to escape, you spend 3 enemy drops to stop it." data-i18n-es="Un reto arcade con IA: Jev intenta escapar y tú tienes 3 enemigos para cerrarle el paso.">Tetris-inspired AI chase: Jev tries to escape, you spend 3 enemy drops to stop it.</p>
+          </section>
+          <section class="hidden items-center gap-2 lg:flex" aria-label="Run controls">
+            <button id="start-run-btn" class="animate-pulse border-4 border-yellow-200 bg-yellow-300 px-5 py-2 font-mono text-sm font-black uppercase text-slate-950 shadow-[5px_5px_0_#f97316] transition hover:-translate-y-0.5 hover:bg-white">▶ Play</button>
+            <span class="border-2 border-yellow-300 bg-yellow-300 px-3 py-1 font-mono text-xs font-black uppercase text-slate-950">1 min</span>
+            <span class="border-2 border-fuchsia-400 bg-fuchsia-500 px-3 py-1 font-mono text-xs font-black uppercase text-white">real Jev</span>
+            <button id="developer-mode-btn" class="border-2 border-emerald-300 bg-emerald-400 px-3 py-1 font-mono text-xs font-black uppercase text-slate-950">Learning mode</button>
+          </section>
+        </div>
+      </header>
+
+      <section class="grid min-h-0 grid-cols-[auto_minmax(330px,1fr)] gap-3">
+        <section class="grid min-h-0 grid-rows-[auto_1fr] gap-3">
+          <article class="grid grid-cols-[1fr_1fr] gap-3">
+            <div class="rounded-xl border-4 border-yellow-300 bg-slate-950 p-3 shadow-[5px_5px_0_#f97316]">
+              <h2 class="font-mono text-sm font-black uppercase text-yellow-300" data-i18n-en="Your objective" data-i18n-es="Tu objetivo">Your objective</h2>
+              <p class="mt-1 text-xs font-medium leading-5 text-slate-200" data-i18n-en="Stop Jev from reaching the portal. You get 3 manual enemy placements for the whole run, each with a short cooldown." data-i18n-es="Impide que Jev llegue al portal. Solo tienes 3 enemigos en toda la partida, así que colócalos con cabeza. Cada uso tiene un breve cooldown.">Stop Jev from reaching the portal. You get 3 manual enemy placements for the whole run, each with a short cooldown.</p>
+              <div id="opponent-panel" class="mt-2 grid grid-cols-[1fr_auto] items-center gap-2 font-mono text-xs font-black uppercase text-slate-200">
+                <span data-i18n-html-en="Time left: <strong id='run-timer' class='text-red-300'>01:00</strong>" data-i18n-html-es="Tiempo restante: <strong id='run-timer' class='text-red-300'>01:00</strong>">Time left: <strong id="run-timer" class="text-red-300">01:00</strong></span>
+                <span data-i18n-html-en="Drops: <strong id='enemy-drops-left' class='text-yellow-300'>3/3</strong>" data-i18n-html-es="Enemigos: <strong id='enemy-drops-left' class='text-yellow-300'>3/3</strong>">Drops: <strong id="enemy-drops-left" class="text-yellow-300">3/3</strong></span>
+                <span>CD: <strong id="enemy-drop-cooldown" class="text-cyan-300">ready</strong></span>
+                <span class="col-span-2" data-i18n-html-en="Mode: <strong id='placement-mode-status' class='text-fuchsia-300'>manual placement</strong>" data-i18n-html-es="Modo: <strong id='placement-mode-status' class='text-fuchsia-300'>colocación manual</strong>">Mode: <strong id="placement-mode-status" class="text-fuchsia-300">manual placement</strong></span>
+                <span class="h-3 border-2 border-white bg-slate-900"><span id="run-timer-bar" class="block h-full bg-red-500" style="width: 100%"></span></span>
+                <button id="drop-enemy-btn" class="col-span-2 border-2 border-red-400 bg-red-500 px-3 py-1.5 text-xs font-black uppercase text-white shadow-[3px_3px_0_#7f1d1d] transition hover:-translate-y-0.5">Select enemy tile</button>
+                <button id="start-run-btn-mobile" class="col-span-2 border-4 border-yellow-200 bg-yellow-300 px-3 py-1.5 text-xs font-black uppercase text-slate-950 shadow-[3px_3px_0_#f97316] lg:hidden">▶ Play run</button>
+                <span class="col-span-2 text-[10px] text-slate-400" data-i18n-en="Press Play to start. Timer = survive until 00:00 to win. Press Space, then click an empty tile. If Jev reaches the portal, you lose." data-i18n-es="Pulsa Play para empezar. Ganas si aguantas hasta 00:00. Pulsa Espacio y luego haz click en una casilla vacía. Si Jev llega al portal, pierdes.">Press Play to start. Timer = survive until 00:00 to win. Press Space, then click an empty tile. If Jev reaches the portal, you lose.</span>
+              </div>
+            </div>
+            <div class="rounded-xl border-4 border-emerald-400 bg-slate-950 p-3 shadow-[5px_5px_0_#06b6d4]">
+              <h2 class="font-mono text-sm font-black uppercase text-emerald-300" data-i18n-en="Legend" data-i18n-es="Leyenda">Legend</h2>
+              <ul class="mt-2 grid grid-cols-5 gap-2 font-mono text-[10px] font-bold uppercase text-slate-200">
+                <li class="flex flex-col items-center gap-1"><span class="grid h-8 w-8 place-items-center border-2 border-sky-300 bg-slate-900"><img class="max-h-5 max-w-5 object-contain [image-rendering:pixelated]" src="/assets/main-front.png" alt="" /></span><span data-i18n-en="Hero" data-i18n-es="Héroe">Hero</span></li>
+                <li class="flex flex-col items-center gap-1"><span class="grid h-8 w-8 place-items-center border-2 border-purple-400 bg-slate-900"><img class="max-h-6 max-w-6 object-contain [image-rendering:pixelated]" src="/assets/portal.png" alt="" /></span><span data-i18n-en="Exit" data-i18n-es="Portal">Exit</span></li>
+                <li class="flex flex-col items-center gap-1"><span class="grid h-8 w-8 place-items-center border-2 border-red-400 bg-slate-900"><img class="max-h-6 max-w-6 object-contain [image-rendering:pixelated]" src="/assets/enemy.png" alt="" /></span><span data-i18n-en="Enemy" data-i18n-es="Enemigo">Enemy</span></li>
+                <li class="flex flex-col items-center gap-1"><span class="grid h-8 w-8 place-items-center border-2 border-emerald-400 bg-slate-900"><img class="max-h-6 max-w-6 object-contain [image-rendering:pixelated]" src="/assets/potion.png" alt="" /></span><span data-i18n-en="Heal" data-i18n-es="Cura">Heal</span></li>
+                <li class="flex flex-col items-center gap-1"><span class="grid h-8 w-8 place-items-center border-2 border-orange-400 bg-slate-900"><img class="max-h-6 max-w-6 object-contain [image-rendering:pixelated]" src="/assets/sword.png" alt="" /></span><span data-i18n-en="Relic" data-i18n-es="Reliquia">Relic</span></li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="min-h-0 rounded-2xl border-4 border-cyan-300 bg-slate-950 p-3 shadow-[8px_8px_0_#2563eb]">
+            <div class="mb-2 flex items-center justify-between">
+              <h2 class="font-mono text-sm font-black uppercase tracking-wide text-cyan-200" data-i18n-en="Game board" data-i18n-es="Tablero">Game board</h2>
+              <kbd class="border-2 border-white bg-white px-2 py-1 font-mono text-xs font-black text-slate-950">R RESET</kbd>
+            </div>
+            <div id="game" class="overflow-hidden rounded-lg border-4 border-slate-700 bg-black"></div>
+          </article>
+        </section>
+
+        <aside class="grid min-h-0 grid-rows-[1fr_auto] gap-3">
+          <section id="decision-panel" class="min-h-0 overflow-hidden rounded-2xl border-4 border-fuchsia-400 bg-slate-950 p-3 shadow-[8px_8px_0_#db2777]"></section>
+
+          <section class="rounded-xl border-4 border-blue-400 bg-slate-950 p-3 shadow-[5px_5px_0_#22c55e]">
+            <div class="mb-2 flex items-center justify-between gap-3">
+              <h2 class="font-mono text-sm font-black uppercase text-blue-300" data-i18n-en="What Jev does" data-i18n-es="Qué hace Jev">What Jev does</h2>
+              <span class="bg-blue-500 px-2 py-1 font-mono text-[10px] font-black uppercase text-white">choice API</span>
+            </div>
+            <p class="text-xs font-medium leading-5 text-slate-200" data-i18n-en="Each turn sends HP, inventory, legal actions, path hints, recent positions, and loop warnings to Jev. Jev returns one typed action. Phaser validates it and applies deterministic game rules." data-i18n-es="En cada turno enviamos a Jev la vida, el inventario, las acciones válidas, pistas de ruta y memoria reciente. Jev devuelve una acción tipada; Phaser la valida y aplica las reglas del juego.">Each turn sends HP, inventory, legal actions, path hints, recent positions, and loop warnings to Jev. Jev returns one typed action. Phaser validates it and applies deterministic game rules.</p>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <section id="developer-panel" class="fixed inset-3 z-50 hidden overflow-hidden rounded-2xl border-4 border-emerald-300 bg-slate-950 shadow-[10px_10px_0_#16a34a]">
+      <header class="flex items-center justify-between gap-3 border-b-4 border-emerald-300 bg-emerald-400 px-4 py-2 font-mono text-slate-950">
+        <div>
+          <h2 class="text-lg font-black uppercase" data-i18n-en="Learning Wizard" data-i18n-es="Asistente de aprendizaje">Learning Wizard</h2>
+          <p class="text-xs font-bold uppercase" data-i18n-en="Game paused. Step through how Jev receives state, decides, and mutates the dungeon." data-i18n-es="Juego en pausa. Avanza paso a paso para ver qué recibe Jev, cómo decide y cómo esa decisión cambia el dungeon.">Game paused. Step through how Jev receives state, decides, and mutates the dungeon.</p>
+        </div>
+        <nav class="flex items-center gap-2">
+          <button id="developer-prev-btn" class="border-2 border-slate-950 bg-white px-3 py-1 text-xs font-black uppercase text-slate-950" data-i18n-en="Prev" data-i18n-es="Atrás">Prev</button>
+          <span id="developer-step-label" class="min-w-20 text-center text-xs font-black uppercase">Step 1/8</span>
+          <button id="developer-next-btn" class="border-2 border-slate-950 bg-yellow-300 px-3 py-1 text-xs font-black uppercase text-slate-950" data-i18n-en="Next" data-i18n-es="Siguiente">Next</button>
+          <button id="developer-close-btn" class="border-2 border-slate-950 bg-slate-950 px-3 py-1 text-xs font-black uppercase text-white" data-i18n-en="Close" data-i18n-es="Cerrar">Close</button>
+        </nav>
+      </header>
+      <div id="developer-panel-content" class="h-[calc(100%-64px)] overflow-y-auto p-4 font-mono text-xs text-slate-100 shadcn-scroll-area"></div>
+    </section>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
