@@ -75,6 +75,8 @@ It contains:
 - player position, HP, relic count, potion count;
 - walls;
 - entities: enemies, potions, relics, portal;
+- enemy HP values;
+- current turn combat effects for slash/impact rendering;
 - recent action history;
 - recent position history;
 - status: playing, won, or lost;
@@ -145,10 +147,12 @@ board click
   -> convert pointer pixel to grid position
   -> placeEnemyAt(world, position)
   -> validate tile
-  -> add enemy entity
+  -> add enemy entity with hp: 2
   -> consume one drop
   -> start cooldown
 ```
+
+The placement controls are intentionally visible below the dungeon board so the player does not have to open an explanatory card during play.
 
 Validation prevents placement on:
 
@@ -159,6 +163,24 @@ Validation prevents placement on:
 - relics;
 - existing enemies;
 - outside the board.
+
+---
+
+## Combat authority
+
+Combat is deterministic and lives in `world.ts`, not in Jev.
+
+Rules:
+
+- adjacency means only the four cardinal directions: up, down, left, right;
+- diagonals do not count;
+- `ATTACK` can damage only one adjacent enemy per Jev turn;
+- enemies have 2 HP, so one attack does not instantly remove them;
+- after Jev acts, only one adjacent enemy may strike back;
+- enemy strike damage is 34 HP, so Jev dies in three hits from full health;
+- `combatEffects` records transient visual markers, while the actual HP/entity changes are already resolved in state.
+
+Phaser reads `combatEffects` only for presentation. It does not use effects to decide damage.
 
 ---
 

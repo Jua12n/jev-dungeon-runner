@@ -22,6 +22,33 @@ When the wizard opens:
 
 Closing the wizard resumes the run.
 
+If you are studying the project to reuse the pattern in your own app, open this wizard first, then move slowly through the steps while comparing the visible board, the mini board, and the JSON payload.
+
+---
+
+## How to study or reuse the pattern
+
+Use the wizard as a map for your own integration:
+
+1. Start with the visible board and understand the game state.
+2. Inspect `WorldState`, which is the source of truth.
+3. Compare `WorldState` with the smaller `JevGameState` sent to Jev.
+4. Look at the exact `choice` request shape.
+5. Inspect the returned `JevDecision`.
+6. Watch how deterministic code applies that decision.
+7. Notice that combat, enemy HP, cooldowns, and win/loss are normal TypeScript rules, not AI-generated behavior.
+
+The reusable architecture is:
+
+```txt
+structured app state
+  -> compact decision payload
+  -> bounded Jev choice
+  -> validated response
+  -> deterministic state mutation
+  -> UI render
+```
+
 ---
 
 ## Wizard steps
@@ -37,6 +64,8 @@ Shows the current source-of-truth object:
 - player position;
 - HP;
 - entities;
+- enemy HP;
+- combat effects;
 - walls;
 - status;
 - message;
@@ -81,17 +110,19 @@ Applies the current learning decision through:
 applyAction(world, decision.action)
 ```
 
-The wizard then shows how `WorldState` changed.
+The wizard then shows how `WorldState` changed, including movement, pickups, enemy HP, one-enemy-per-turn counterattacks, and `combatEffects` used for slash/impact visuals.
 
 ### 7. Human counter-move
 
-Explains manual enemy placement:
+Explains manual enemy placement. The live placement bar is visible below the dungeon board, while this wizard explains what happens behind that UI:
 
 ```txt
 startEnemyPlacement()
 tryPlaceEnemyAtPointer(pointer)
 placeEnemyAt(world, position)
 ```
+
+Placed enemies start with 2 HP. This makes each placement meaningful because Jev cannot delete a new enemy with a single attack.
 
 ### 8. Full runtime loop
 
@@ -134,6 +165,8 @@ The wizard records method-level trace events such as:
 - `applyAction(world, decision.action)`
 - `startEnemyPlacement()`
 - `placeEnemyAt(world, position)`
+- `applyAction(world, decision.action)` combat resolution
+- `combatEffects` visual rendering
 
 These traces are not just console logs. They are shown inside the UI so reviewers can understand the project without opening DevTools.
 

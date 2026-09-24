@@ -47,11 +47,13 @@ The game computes `legalActions` before sending the request.
 Examples:
 
 - `MOVE_UP` is legal only if the tile above is not blocked.
-- `ATTACK` is legal only if an enemy is adjacent.
+- `ATTACK` is legal only if an enemy is adjacent in one of the four cardinal directions.
 - `USE_POTION` is legal only if Jev has a potion and HP is below max.
 - `WAIT` is always available as a fallback.
 
 This means Jev cannot return arbitrary commands. It can only select from the legal action set.
+
+Important combat detail: Jev chooses `ATTACK`, but the deterministic engine decides which adjacent enemy is hit, how much HP that enemy has left, and whether an enemy strikes back. Jev does not directly remove entities.
 
 ---
 
@@ -179,12 +181,22 @@ This function is responsible for:
 - movement;
 - item pickup;
 - potion use;
-- enemy attacks;
+- cardinal-direction attack resolution;
+- enemy HP updates;
+- one-enemy-per-turn counterattacks;
+- combat effect records used by Phaser for slash/impact rendering;
 - portal win condition;
 - HP loss condition;
 - action and position history.
 
 Jev selects the action. The game decides what the action actually does.
+
+Current balance:
+
+- enemies start with 2 HP;
+- Jev damages only one adjacent enemy per `ATTACK` turn;
+- one adjacent enemy can strike Jev for 34 damage after the turn;
+- three enemy hits stop Jev from full HP.
 
 ---
 

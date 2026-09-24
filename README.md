@@ -19,11 +19,11 @@ You play **against Jev**.
 - Jev controls the runner.
 - Jev tries to reach the portal before the timer expires.
 - You have **3 enemy placements** during the whole run.
-- To place an enemy, press **Space** or click **Select enemy tile**, then click an empty tile.
+- To place an enemy, use the always-visible placement bar below the dungeon: press **Space** or click **Select enemy tile**, then click an empty tile.
 - If Jev reaches the portal, **you lose**.
 - If the timer reaches zero or Jev is defeated, **you win**.
 
-The run starts only when the player presses **Play**, so the page can load without immediately spending API calls.
+The run starts only when the player presses **Play**, so the page can load without immediately spending API calls. There is a Play button in the header and a larger in-board Play button on the start overlay.
 
 ---
 
@@ -51,6 +51,10 @@ The architecture keeps responsibilities separate:
 - Real Jev decision loop through `/api/decision`.
 - Local mock/fallback if Jev fails or `JEV_API_KEY` is missing.
 - Manual adversarial gameplay: place enemies to block Jev.
+- Always-visible placement control bar below the dungeon board.
+- In-board Play overlay so the start action is obvious.
+- Balanced combat: enemies take two hits, while Jev dies in three enemy hits from full HP.
+- Slash/impact combat effects for readable attacks.
 - Random dungeon generation.
 - Sprite-based pixel-art board.
 - Bilingual UI: English and Spanish.
@@ -62,6 +66,8 @@ The architecture keeps responsibilities separate:
   - `Choice`, `Noul`, and `Score`
   - the returned decision
   - state mutation via `applyAction`
+  - combat resolution and visual `combatEffects`
+  - the manual enemy placement flow
   - the full runtime loop
 - Debug panel with confidence, probabilities, path hints, memory, and action trace.
 
@@ -305,15 +311,15 @@ When opened:
 Wizard steps:
 
 1. Big picture
-2. Current `WorldState`
+2. Current `WorldState`, including enemy HP and transient combat effects
 3. What Jev receives
 4. Exact Jev request shape
 5. Decision response
-6. State mutation
-7. Human counter-move
+6. State mutation, combat resolution, and slash/impact effects
+7. Human counter-move / enemy placement flow
 8. Full runtime loop
 
-This is intentionally verbose so reviewers can understand the architecture without reading every source file first.
+This is intentionally verbose so reviewers can understand the architecture without reading every source file first. It is also useful for someone who wants to reuse the pattern: typed state in, bounded Jev choice out, deterministic game rules applied afterward.
 
 ---
 

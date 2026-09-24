@@ -31,7 +31,7 @@ You lose if:
 
 Each run lasts one minute.
 
-The timer starts only after pressing **Play**. This prevents accidental API calls when the page loads.
+The timer starts only after pressing **Play**. This prevents accidental API calls when the page loads. You can start from the header button or from the large Play button shown directly inside the board overlay.
 
 Opening the Learning Wizard pauses the timer.
 
@@ -41,9 +41,11 @@ Opening the Learning Wizard pauses the timer.
 
 You have three enemy placements per run.
 
+The placement controls stay visible below the dungeon board during play.
+
 To place an enemy:
 
-1. Press **Space** or click **Select enemy tile**.
+1. Press **Space** or click **Select enemy tile** in the bar below the dungeon.
 2. Click an empty floor tile.
 3. The enemy is placed if the tile is valid.
 4. Cooldown starts.
@@ -103,7 +105,12 @@ If Jev is adjacent to an enemy after an action, one adjacent enemy can strike on
 
 Combat uses the four cardinal directions only: up, down, left, and right. Diagonal contact does not count.
 
-Jev may choose `ATTACK` when an enemy is adjacent. Each `ATTACK` action hits one adjacent enemy, so even if several enemies are around Jev, the runner only performs one strike per turn. Enemies now take two hits to defeat, making enemy placement more valuable.
+Jev may choose `ATTACK` when an enemy is adjacent. Each `ATTACK` action hits one adjacent enemy, so even if several enemies are around Jev, the runner only performs one strike per turn. Enemies take two hits to defeat, making enemy placement more valuable.
+
+The board shows combat feedback:
+
+- yellow slash effect when Jev hits an enemy;
+- red impact effect when an enemy hits Jev.
 
 ---
 
@@ -129,4 +136,5 @@ Randomized elements include:
 - Do not waste all enemies early.
 - Watch Jev's path hints in the debug panel.
 - Place enemies near chokepoints when possible.
+- Because enemies take two hits, a well-placed enemy can delay Jev for multiple turns.
 - Use Learning Mode to inspect what Jev sees before it decides.

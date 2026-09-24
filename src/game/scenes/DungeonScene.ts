@@ -677,6 +677,8 @@ function summarizeWorld(world: WorldState): Record<string, unknown> {
     player: world.player,
     walls: world.walls.size,
     enemies: world.entities.filter((entity) => entity.kind === 'enemy').length,
+    enemyHp: world.entities.filter((entity) => entity.kind === 'enemy').map((enemy) => ({ x: enemy.x, y: enemy.y, hp: enemy.hp ?? 2 })),
+    combatEffects: world.combatEffects,
     potions: world.entities.filter((entity) => entity.kind === 'potion').length,
     relics: world.entities.filter((entity) => entity.kind === 'coin').length,
     exit: world.entities.find((entity) => entity.kind === 'exit') ?? null,
@@ -763,8 +765,8 @@ function developerSteps(input: {
     {
       title: pick('Current WorldState: the source of truth', 'WorldState actual: la fuente de verdad'),
       body: `${pick(
-        '<p>The game does not trust visuals as state. The source of truth is <code>WorldState</code>.</p><p>Rendering, Jev payloads, legal actions, and win/loss checks are derived from this object.</p>',
-        '<p>El juego no usa lo visual como estado. La fuente de verdad es <code>WorldState</code>.</p><p>El render, el payload de Jev, las acciones legales y las reglas de victoria/derrota salen de este objeto.</p>',
+        '<p>The game does not trust visuals as state. The source of truth is <code>WorldState</code>.</p><p>Rendering, Jev payloads, legal actions, combat effects, enemy HP, and win/loss checks are derived from this object.</p>',
+        '<p>El juego no usa lo visual como estado. La fuente de verdad es <code>WorldState</code>.</p><p>El render, el payload de Jev, las acciones legales, los efectos de combate, la vida de enemigos y las reglas de victoria/derrota salen de este objeto.</p>',
       )}<pre>${escapeHtml(stableJson(summarizeWorld(input.world)))}</pre>`,
     },
     {
@@ -811,9 +813,9 @@ function developerSteps(input: {
       title: pick('How the decision changes game state', 'Cómo la decisión cambia el estado'),
       body: `${pick(
         `<p><code>applyAction(world, decision.action)</code> is where the selected action becomes real gameplay.</p>
-        <ul class="mt-2 list-disc space-y-1 pl-5"><li>Movement only happens if the destination is not a wall or enemy.</li><li>Potions/relics are collected only if Jev lands on their tile.</li><li>Enemies damage Jev if adjacent after the move.</li><li>Portal tile changes status to <code>won</code> for Jev, which means <strong>you lose</strong>.</li><li>HP reaching zero or timer reaching zero changes status to <code>lost</code> for Jev, which means <strong>you win</strong>.</li></ul>`,
+        <ul class="mt-2 list-disc space-y-1 pl-5"><li>Movement only happens if the destination is not a wall or enemy.</li><li>Potions/relics are collected only if Jev lands on their tile.</li><li><code>ATTACK</code> checks the four cardinal directions and damages only one adjacent enemy.</li><li>Enemies have 2 HP, so Jev needs two attack turns to remove one.</li><li>Only one adjacent enemy can strike back per turn for 34 damage; from full HP, three hits stop Jev.</li><li><code>combatEffects</code> records slash/impact markers that Phaser renders above the board.</li><li>Portal tile changes status to <code>won</code> for Jev, which means <strong>you lose</strong>.</li><li>HP reaching zero or timer reaching zero changes status to <code>lost</code> for Jev, which means <strong>you win</strong>.</li></ul>`,
         `<p><code>applyAction(world, decision.action)</code> convierte la acción elegida en gameplay real.</p>
-        <ul class="mt-2 list-disc space-y-1 pl-5"><li>El movimiento solo ocurre si el destino no es pared ni enemigo.</li><li>Las pociones/reliquias se recogen solo si Jev cae en su casilla.</li><li>Los enemigos dañan a Jev si quedan adyacentes después del movimiento.</li><li>El portal cambia el estado a <code>won</code> para Jev, o sea que <strong>tú pierdes</strong>.</li><li>Si la vida o el timer llegan a cero, el estado pasa a <code>lost</code> para Jev, o sea que <strong>tú ganas</strong>.</li></ul>`,
+        <ul class="mt-2 list-disc space-y-1 pl-5"><li>El movimiento solo ocurre si el destino no es pared ni enemigo.</li><li>Las pociones/reliquias se recogen solo si Jev cae en su casilla.</li><li><code>ATTACK</code> revisa las cuatro direcciones cardinales y daña solo a un enemigo adyacente.</li><li>Los enemigos tienen 2 de vida, así que Jev necesita dos turnos de ataque para eliminar uno.</li><li>Solo un enemigo adyacente puede contraatacar por turno con 34 de daño; desde vida completa, tres golpes detienen a Jev.</li><li><code>combatEffects</code> guarda marcas de corte/impacto que Phaser dibuja sobre el tablero.</li><li>El portal cambia el estado a <code>won</code> para Jev, o sea que <strong>tú pierdes</strong>.</li><li>Si la vida o el timer llegan a cero, el estado pasa a <code>lost</code> para Jev, o sea que <strong>tú ganas</strong>.</li></ul>`,
       )}
         <pre>${escapeHtml(stableJson({
           lastDecision: input.decision ?? 'Waiting for first Jev decision',
@@ -823,8 +825,8 @@ function developerSteps(input: {
     {
       title: pick('Your move: manual enemy placement', 'Tu jugada: colocar enemigos manualmente'),
       body: `${pick(
-        '<p>You get <strong>3 enemy placements</strong>. Press Space or the button, then click an empty floor tile.</p><p><code>placeEnemyAt(world, position)</code> validates the click before mutating state.</p>',
-        '<p>Tienes <strong>3 colocaciones de enemigos</strong>. Pulsa Espacio o el botón y luego haz click en una casilla libre.</p><p><code>placeEnemyAt(world, position)</code> valida el click antes de mutar el estado.</p>',
+        '<p>You get <strong>3 enemy placements</strong>. The placement control bar is always visible below the dungeon board. Press Space or the button, then click an empty floor tile.</p><p><code>placeEnemyAt(world, position)</code> validates the click before mutating state. Placed enemies start with 2 HP.</p>',
+        '<p>Tienes <strong>3 colocaciones de enemigos</strong>. La barra de colocación siempre queda visible debajo del tablero. Pulsa Espacio o el botón y luego haz click en una casilla libre.</p><p><code>placeEnemyAt(world, position)</code> valida el click antes de mutar el estado. Los enemigos colocados empiezan con 2 de vida.</p>',
       )}<pre>${escapeHtml(stableJson({
           enemyDropsLeft: input.enemyDropsLeft,
           placementMode: input.placementMode,
@@ -908,7 +910,7 @@ function actionCriteria(action: string): string {
     MOVE_DOWN: pick('Move one tile down when it improves survival, collection, or route to portal.', 'Mover una casilla abajo si mejora supervivencia, recolección o ruta al portal.'),
     MOVE_LEFT: pick('Move one tile left when it improves survival, collection, or route to portal.', 'Mover una casilla a la izquierda si mejora supervivencia, recolección o ruta al portal.'),
     MOVE_RIGHT: pick('Move one tile right when it improves survival, collection, or route to portal.', 'Mover una casilla a la derecha si mejora supervivencia, recolección o ruta al portal.'),
-    ATTACK: pick('Attack an adjacent enemy only when legal and safer than fleeing.', 'Atacar a un enemigo adyacente solo si es legal y más seguro que huir.'),
+    ATTACK: pick('Strike one adjacent enemy in a cardinal direction; enemies take two hits, so attack only when safer than fleeing.', 'Golpear a un enemigo adyacente en dirección cardinal; los enemigos requieren dos golpes, así que ataca solo si es más seguro que huir.'),
     PICKUP: pick('Pick up a relic or potion on the current tile.', 'Recoger una reliquia o poción en la casilla actual.'),
     USE_POTION: pick('Use a potion when HP is low enough to risk death soon.', 'Usar una poción cuando la vida esté lo bastante baja como para arriesgar la partida.'),
     WAIT: pick('Wait only when no better legal action exists.', 'Esperar solo si no existe una mejor acción legal.'),
