@@ -38,7 +38,7 @@ export class DungeonScene extends Phaser.Scene {
   private lastTurnAt = 0;
   private runStartedAt = 0;
   private runStarted = false;
-  private overlayTexts: Phaser.GameObjects.Text[] = [];
+  private overlayTexts: Phaser.GameObjects.GameObject[] = [];
   private tileSprites: Phaser.GameObjects.Image[] = [];
   private enemyDropsLeft = ENEMY_DROPS_PER_RUN;
   private lastEnemyDropAt = Number.NEGATIVE_INFINITY;
@@ -525,48 +525,75 @@ export class DungeonScene extends Phaser.Scene {
   }
 
   private drawStartOverlay(): void {
-    this.graphics.fillStyle(0x020617, 0.78);
-    this.graphics.fillRoundedRect(46, 138, GRID_WIDTH * TILE_SIZE - 92, 140, 16);
-    this.graphics.lineStyle(3, 0xfde047, 1);
-    this.graphics.strokeRoundedRect(46, 138, GRID_WIDTH * TILE_SIZE - 92, 140, 16);
+    const centerX = GRID_WIDTH * TILE_SIZE / 2;
+    const overlayGraphics = this.add.graphics().setDepth(10);
+
+    overlayGraphics.fillStyle(0x020617, 0.86);
+    overlayGraphics.fillRoundedRect(46, 126, GRID_WIDTH * TILE_SIZE - 92, 176, 16);
+    overlayGraphics.lineStyle(3, 0xfde047, 1);
+    overlayGraphics.strokeRoundedRect(46, 126, GRID_WIDTH * TILE_SIZE - 92, 176, 16);
 
     const titleText = this.add
-      .text(GRID_WIDTH * TILE_SIZE / 2, 174, pick('PRESS PLAY', 'PULSA PLAY'), {
+      .text(centerX, 156, pick('PRESS PLAY', 'PULSA PLAY'), {
         color: '#fde047',
         fontFamily: 'Inter, Arial, sans-serif',
-        fontSize: '34px',
+        fontSize: '32px',
         fontStyle: 'bold',
       })
       .setOrigin(0.5)
-      .setDepth(2);
+      .setDepth(11);
+
+    overlayGraphics.fillStyle(0xfde047, 1);
+    overlayGraphics.fillRoundedRect(centerX - 78, 182, 156, 42, 8);
+    overlayGraphics.lineStyle(4, 0xf97316, 1);
+    overlayGraphics.strokeRoundedRect(centerX - 78, 182, 156, 42, 8);
+
+    const playZone = this.add
+      .zone(centerX, 203, 156, 42)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.startRun())
+      .setDepth(13);
+
+    const playText = this.add
+      .text(centerX, 203, '▶ PLAY', {
+        color: '#020617',
+        fontFamily: 'Inter, Arial, sans-serif',
+        fontSize: '18px',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5)
+      .setDepth(12);
+
     const detailText = this.add
-      .text(GRID_WIDTH * TILE_SIZE / 2, 218, pick('Start the timer and let Jev begin deciding. Enter also works.', 'Arranca el temporizador y deja que Jev empiece a decidir. Enter también sirve.'), {
+      .text(centerX, 246, pick('Start the timer and let Jev begin deciding. Enter also works.', 'Arranca el temporizador y deja que Jev empiece a decidir. Enter también sirve.'), {
         color: '#e2e8f0',
         fontFamily: 'Inter, Arial, sans-serif',
         fontSize: '14px',
       })
       .setOrigin(0.5)
-      .setDepth(2);
+      .setDepth(11);
     const hintText = this.add
-      .text(GRID_WIDTH * TILE_SIZE / 2, 244, pick('Your goal: stop Jev with 3 enemy placements.', 'Tu objetivo: detener a Jev con 3 enemigos.'), {
+      .text(centerX, 270, pick('Your goal: stop Jev with 3 enemy placements.', 'Tu objetivo: detener a Jev con 3 enemigos.'), {
         color: '#67e8f9',
         fontFamily: 'Inter, Arial, sans-serif',
         fontSize: '13px',
       })
       .setOrigin(0.5)
-      .setDepth(2);
+      .setDepth(11);
 
-    this.overlayTexts = [titleText, detailText, hintText];
+    this.overlayTexts = [overlayGraphics, titleText, playZone, playText, detailText, hintText];
   }
 
   private drawEndOverlay(): void {
     const won = this.world.status === 'won';
-    this.graphics.fillStyle(0x020617, 0.78);
-    this.graphics.fillRoundedRect(52, 150, GRID_WIDTH * TILE_SIZE - 104, 120, 16);
-    this.graphics.lineStyle(2, won ? 0xef4444 : 0x22c55e, 1);
-    this.graphics.strokeRoundedRect(52, 150, GRID_WIDTH * TILE_SIZE - 104, 120, 16);
-    this.graphics.fillStyle(won ? 0xef4444 : 0x22c55e, 1);
-    this.graphics.fillRect(72, 178, 10, 10);
+    const overlayGraphics = this.add.graphics().setDepth(10);
+
+    overlayGraphics.fillStyle(0x020617, 0.86);
+    overlayGraphics.fillRoundedRect(52, 150, GRID_WIDTH * TILE_SIZE - 104, 120, 16);
+    overlayGraphics.lineStyle(2, won ? 0xef4444 : 0x22c55e, 1);
+    overlayGraphics.strokeRoundedRect(52, 150, GRID_WIDTH * TILE_SIZE - 104, 120, 16);
+    overlayGraphics.fillStyle(won ? 0xef4444 : 0x22c55e, 1);
+    overlayGraphics.fillRect(72, 178, 10, 10);
 
     const title = won ? pick('JEV ESCAPED', 'JEV ESCAPÓ') : pick('YOU WIN', 'GANASTE');
     const detail = won ? pick('You lose. Jev reached the portal.', 'Has perdido: Jev llegó al portal.') : pick('Jev did not reach the portal.', 'Jev no llegó al portal.');
@@ -578,7 +605,7 @@ export class DungeonScene extends Phaser.Scene {
         fontStyle: 'bold',
       })
       .setOrigin(0.5)
-      .setDepth(2);
+      .setDepth(11);
     const detailText = this.add
       .text(GRID_WIDTH * TILE_SIZE / 2, 228, `${detail} ${pick('Press R to run again.', 'Pulsa R para volver a jugar.')}`, {
         color: '#cbd5e1',
@@ -586,9 +613,9 @@ export class DungeonScene extends Phaser.Scene {
         fontSize: '15px',
       })
       .setOrigin(0.5)
-      .setDepth(2);
+      .setDepth(11);
 
-    this.overlayTexts = [titleText, detailText];
+    this.overlayTexts = [overlayGraphics, titleText, detailText];
   }
 }
 

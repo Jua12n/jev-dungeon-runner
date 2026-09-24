@@ -74,9 +74,34 @@ body::before {
   position: fixed;
 }
 
+.left-column,
+.right-column,
+.content-grid {
+  min-width: 0;
+}
+
+#game {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
 #game canvas {
   display: block;
+  height: auto;
   image-rendering: pixelated;
+  max-width: 100%;
+}
+
+@media (min-width: 1280px) and (max-height: 820px) {
+  #game canvas {
+    max-height: 360px;
+    width: auto;
+  }
+}
+
+summary::-webkit-details-marker {
+  display: none;
 }
 
 .shadcn-scroll-area {
