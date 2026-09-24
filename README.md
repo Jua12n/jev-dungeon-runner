@@ -2,6 +2,10 @@
 
 **Jev Dungeon Runner** is a browser game that demonstrates how to use **Jev as a structured decision layer inside software**.
 
+Live demo: https://jev-dungeon-runner.vercel.app/
+
+Repository: https://github.com/Jua12n/jev-dungeon-runner
+
 Jev does not write dialogue, generate game text, or control the engine directly. Instead, every turn the game sends Jev a compact state object and asks one bounded `choice` question: **what should the runner do next?** The Phaser engine then validates and applies the selected action using deterministic game rules.
 
 This repository is designed as a portfolio/project-study repo: it includes a playable game, a real Jev API integration, a local mock/fallback path, a bilingual UI, and an in-app Learning Wizard that explains the decision pipeline step by step.
