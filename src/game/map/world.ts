@@ -5,6 +5,7 @@ import { pick } from '../../i18n';
 export const GRID_WIDTH = 20;
 export const GRID_HEIGHT = 15;
 export const TILE_SIZE = 28;
+const ENEMY_STRIKE_DAMAGE = 34;
 
 export type EntityKind = 'enemy' | 'potion' | 'coin' | 'exit';
 
@@ -15,6 +16,13 @@ export interface Position {
 
 export interface Entity extends Position {
   kind: EntityKind;
+  hp?: number;
+}
+
+export interface CombatEffect {
+  kind: 'player_attack' | 'enemy_attack';
+  from: Position;
+  to: Position;
 }
 
 export interface WorldState {
@@ -30,6 +38,7 @@ export interface WorldState {
   positionHistory: Position[];
   message: string;
   status: 'playing' | 'won' | 'lost';
+  combatEffects: CombatEffect[];
 }
 
 export function createWorld(): WorldState {
@@ -59,6 +68,7 @@ export function createWorld(): WorldState {
       positionHistory: [playerStart],
       message: pick('Random dungeon generated. Jev is waking up...', 'Mazmorra generada. Jev está despertando...'),
       status: 'playing',
+      combatEffects: [],
     };
   }
 
@@ -101,14 +111,15 @@ function createFallbackWorld(): WorldState {
       { kind: 'coin', x: 16, y: 12 },
       { kind: 'potion', x: 3, y: 12 },
       { kind: 'potion', x: 15, y: 4 },
-      { kind: 'enemy', x: 7, y: 6 },
-      { kind: 'enemy', x: 12, y: 11 },
+      { kind: 'enemy', x: 7, y: 6, hp: 2 },
+      { kind: 'enemy', x: 12, y: 11, hp: 2 },
       { kind: 'exit', x: 18, y: 13 },
     ],
     actionHistory: [],
     positionHistory: [playerStart],
     message: pick('Fallback dungeon loaded. Jev is waking up...', 'Mazmorra de respaldo cargada. Jev está despertando...'),
     status: 'playing',
+    combatEffects: [],
   };
 }
 
@@ -193,7 +204,7 @@ function placeEntities(
     const candidateIndex = Math.floor(Math.random() * candidates.length);
     const [position] = candidates.splice(candidateIndex, 1);
     reserved.add(key(position));
-    entities.push({ kind, ...position });
+    entities.push(kind === 'enemy' ? { kind, ...position, hp: 2 } : { kind, ...position });
   }
 
   return entities;
@@ -209,7 +220,8 @@ export function placeEnemyAt(world: WorldState, position: Position): { world: Wo
   }
 
   const nextWorld = cloneWorld(world);
-  nextWorld.entities = [...nextWorld.entities, { kind: 'enemy', ...position }];
+  nextWorld.entities = [...nextWorld.entities, { kind: 'enemy', ...position, hp: 2 }];
+  nextWorld.combatEffects = [];
   nextWorld.message = pick(`You placed an enemy at ${position.x},${position.y}.`, `Enemigo colocado en ${position.x},${position.y}.`);
 
   return { world: nextWorld, placed: true };
@@ -244,6 +256,8 @@ export function buildJevGameState(world: WorldState): JevGameState {
       'Reach the exit to win.',
       'Collecting relics improves score but survival is more important.',
       'Use potions when health is low.',
+      'Attack only hits one adjacent enemy in the four cardinal directions: up, down, left, or right.',
+      'Enemies also strike only in the four cardinal directions, and only one adjacent enemy can hit per turn.',
       'Avoid enemies unless adjacent and healthy enough to attack.',
       'Only choose actions present in legalActions.',
       'If loopWarning is true, break the loop by choosing a different legal movement and avoid returning to the previous tile.',
@@ -258,6 +272,7 @@ export function applyAction(world: WorldState, action: JevAction): WorldState {
 
   const nextWorld = cloneWorld(world);
   nextWorld.turn += 1;
+  nextWorld.combatEffects = [];
   const target = targetForAction(nextWorld.player, action);
 
   if (action.startsWith('MOVE_') && target && canMoveTo(nextWorld, target)) {
@@ -275,9 +290,11 @@ export function applyAction(world: WorldState, action: JevAction): WorldState {
     nextWorld.message = pick(`Jev chose ${action}; the runner waits.`, `Jev decidió ${action}; el personaje espera.`);
   }
 
-  if (isEnemyAdjacent(nextWorld)) {
-    nextWorld.player.hp -= 12;
-    nextWorld.message += pick(' An enemy hits back.', ' Un enemigo contraataca.');
+  const strikingEnemy = adjacentEnemies(nextWorld)[0];
+  if (strikingEnemy) {
+    nextWorld.player.hp -= ENEMY_STRIKE_DAMAGE;
+    nextWorld.combatEffects.push({ kind: 'enemy_attack', from: { x: strikingEnemy.x, y: strikingEnemy.y }, to: { x: nextWorld.player.x, y: nextWorld.player.y } });
+    nextWorld.message += pick(' An adjacent enemy strikes once.', ' Un enemigo adyacente golpea una vez.');
   }
 
   if (entityAt(nextWorld, nextWorld.player)?.kind === 'exit') {
@@ -315,6 +332,7 @@ function cloneWorld(world: WorldState): WorldState {
     entities: world.entities.map((entity) => ({ ...entity })),
     actionHistory: [...world.actionHistory],
     positionHistory: world.positionHistory.map((position) => ({ ...position })),
+    combatEffects: world.combatEffects.map((effect) => ({ ...effect, from: { ...effect.from }, to: { ...effect.to } })),
   };
 }
 
@@ -393,18 +411,40 @@ function usePotion(world: WorldState): void {
 }
 
 function attackAdjacentEnemy(world: WorldState): void {
-  const enemy = world.entities.find((entity) => entity.kind === 'enemy' && distance(entity, world.player) === 1);
+  const enemy = adjacentEnemies(world)[0];
   if (!enemy) {
-    world.message = pick('Jev attacked, but no enemy was adjacent.', 'Jev atacó, pero no había enemigo adyacente.');
+    world.message = pick('Jev attacked in the four cardinal directions, but no enemy was adjacent.', 'Jev atacó en las cuatro direcciones, pero no había ningún enemigo adyacente.');
     return;
   }
-  world.entities = world.entities.filter((entity) => entity !== enemy);
-  world.player.hp -= 5;
-  world.message = pick('Enemy defeated.', 'Enemigo derrotado.');
+  world.combatEffects.push({ kind: 'player_attack', from: { x: world.player.x, y: world.player.y }, to: { x: enemy.x, y: enemy.y } });
+
+  const nextHp = (enemy.hp ?? 2) - 1;
+  if (nextHp <= 0) {
+    world.entities = world.entities.filter((entity) => entity !== enemy);
+    world.message = pick('Jev finished one adjacent enemy.', 'Jev remató a un enemigo adyacente.');
+    return;
+  }
+
+  enemy.hp = nextHp;
+  world.message = pick('Jev hit one adjacent enemy. It is still alive.', 'Jev golpeó a un enemigo adyacente. Sigue vivo.');
 }
 
 function isEnemyAdjacent(world: WorldState): boolean {
-  return world.entities.some((entity) => entity.kind === 'enemy' && distance(entity, world.player) === 1);
+  return adjacentEnemies(world).length > 0;
+}
+
+function adjacentEnemies(world: WorldState): Entity[] {
+  const targets = cardinalNeighbors(world.player).map(key);
+  return world.entities.filter((entity) => entity.kind === 'enemy' && targets.includes(key(entity)));
+}
+
+function cardinalNeighbors(position: Position): Position[] {
+  return [
+    { x: position.x, y: position.y - 1 },
+    { x: position.x + 1, y: position.y },
+    { x: position.x, y: position.y + 1 },
+    { x: position.x - 1, y: position.y },
+  ];
 }
 
 function nearest(world: WorldState, kind: EntityKind): { direction: DirectionHint; distance: number | null } {

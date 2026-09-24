@@ -172,6 +172,8 @@ type JevAction =
 
 Jev receives only legal actions for the current turn. For example, `ATTACK` is only legal when an enemy is adjacent, and `USE_POTION` is only legal when the runner has a potion and HP is below max.
 
+Combat is cardinal-direction based: attacks check up, down, left, and right. Jev can strike one adjacent enemy per turn, and only one adjacent enemy can hit Jev back per turn. Jev is fragile: three enemy hits are enough to stop the run from full HP. Enemies take two hits to defeat, so Jev cannot clear threats too easily. The Phaser scene renders a brief slash/impact effect for these hits.
+
 ---
 
 ## Jev API shape

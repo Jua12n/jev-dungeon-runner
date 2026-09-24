@@ -295,6 +295,8 @@ export class DungeonScene extends Phaser.Scene {
       }
     }
 
+    this.drawCombatEffects();
+
     if (!this.runStarted && this.world.status === 'playing') {
       this.drawStartOverlay();
     }
@@ -524,11 +526,49 @@ export class DungeonScene extends Phaser.Scene {
     }
   }
 
+  private drawCombatEffects(): void {
+    if (this.world.combatEffects.length === 0) {
+      return;
+    }
+
+    const effectGraphics = this.add.graphics().setDepth(6);
+    const effectObjects: Phaser.GameObjects.GameObject[] = [effectGraphics];
+
+    for (const effect of this.world.combatEffects) {
+      const fromX = effect.from.x * TILE_SIZE + TILE_SIZE / 2;
+      const fromY = effect.from.y * TILE_SIZE + TILE_SIZE / 2;
+      const toX = effect.to.x * TILE_SIZE + TILE_SIZE / 2;
+      const toY = effect.to.y * TILE_SIZE + TILE_SIZE / 2;
+      const color = effect.kind === 'player_attack' ? 0xfde047 : 0xef4444;
+      const glyph = effect.kind === 'player_attack' ? '⚔' : '✹';
+
+      effectGraphics.lineStyle(5, color, 0.95);
+      effectGraphics.lineBetween(fromX, fromY, toX, toY);
+      effectGraphics.lineStyle(2, 0xffffff, 0.95);
+      effectGraphics.strokeCircle(toX, toY, TILE_SIZE * 0.42);
+      effectGraphics.fillStyle(color, 0.22);
+      effectGraphics.fillCircle(toX, toY, TILE_SIZE * 0.52);
+
+      const hitText = this.add
+        .text(toX, toY, glyph, {
+          color: effect.kind === 'player_attack' ? '#fde047' : '#fca5a5',
+          fontFamily: 'Inter, Arial, sans-serif',
+          fontSize: '22px',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0.5)
+        .setDepth(7);
+      effectObjects.push(hitText);
+    }
+
+    this.overlayTexts.push(...effectObjects);
+  }
+
   private drawStartOverlay(): void {
     const centerX = GRID_WIDTH * TILE_SIZE / 2;
     const overlayGraphics = this.add.graphics().setDepth(10);
 
-    overlayGraphics.fillStyle(0x020617, 0.86);
+    overlayGraphics.fillStyle(0x020617, 0.96);
     overlayGraphics.fillRoundedRect(46, 126, GRID_WIDTH * TILE_SIZE - 92, 176, 16);
     overlayGraphics.lineStyle(3, 0xfde047, 1);
     overlayGraphics.strokeRoundedRect(46, 126, GRID_WIDTH * TILE_SIZE - 92, 176, 16);
@@ -565,23 +605,27 @@ export class DungeonScene extends Phaser.Scene {
       .setDepth(12);
 
     const detailText = this.add
-      .text(centerX, 246, pick('Start the timer and let Jev begin deciding. Enter also works.', 'Arranca el temporizador y deja que Jev empiece a decidir. Enter también sirve.'), {
-        color: '#e2e8f0',
+      .text(centerX, 246, pick('Start the timer. Enter also works.', 'Inicia el temporizador. Enter también sirve.'), {
+        align: 'center',
+        color: '#f8fafc',
         fontFamily: 'Inter, Arial, sans-serif',
         fontSize: '14px',
+        wordWrap: { width: GRID_WIDTH * TILE_SIZE - 132, useAdvancedWrap: true },
       })
       .setOrigin(0.5)
       .setDepth(11);
     const hintText = this.add
-      .text(centerX, 270, pick('Your goal: stop Jev with 3 enemy placements.', 'Tu objetivo: detener a Jev con 3 enemigos.'), {
+      .text(centerX, 270, pick('Goal: stop Jev with 3 enemies.', 'Meta: detén a Jev con 3 enemigos.'), {
+        align: 'center',
         color: '#67e8f9',
         fontFamily: 'Inter, Arial, sans-serif',
         fontSize: '13px',
+        wordWrap: { width: GRID_WIDTH * TILE_SIZE - 132, useAdvancedWrap: true },
       })
       .setOrigin(0.5)
       .setDepth(11);
 
-    this.overlayTexts = [overlayGraphics, titleText, playZone, playText, detailText, hintText];
+    this.overlayTexts.push(overlayGraphics, titleText, playZone, playText, detailText, hintText);
   }
 
   private drawEndOverlay(): void {
@@ -615,7 +659,7 @@ export class DungeonScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(11);
 
-    this.overlayTexts = [overlayGraphics, titleText, detailText];
+    this.overlayTexts.push(overlayGraphics, titleText, detailText);
   }
 }
 

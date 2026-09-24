@@ -99,9 +99,11 @@ Examples:
 
 ## Combat
 
-If Jev is adjacent to an enemy after an action, the enemy hits back.
+If Jev is adjacent to an enemy after an action, one adjacent enemy can strike once. Jev is intentionally fragile: three enemy hits are enough to stop the run from full HP.
 
-Jev may choose `ATTACK` when an enemy is adjacent. Attacking removes that enemy but costs some HP.
+Combat uses the four cardinal directions only: up, down, left, and right. Diagonal contact does not count.
+
+Jev may choose `ATTACK` when an enemy is adjacent. Each `ATTACK` action hits one adjacent enemy, so even if several enemies are around Jev, the runner only performs one strike per turn. Enemies now take two hits to defeat, making enemy placement more valuable.
 
 ---
 
